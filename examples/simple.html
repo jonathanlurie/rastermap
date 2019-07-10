@@ -1,0 +1,63 @@
+<html>
+<head>
+  <title>Test</title>
+</head>
+<body>
+  <!-- importing the automatically build module -->
+  <script src="../dist/rastermap.js"></script>
+
+  <p>Open Javascript console.</p>
+  <canvas id="raster" width="0" height="0"></canvas>
+
+  <script>
+    let rasterCanvas = document.getElementById('raster')
+
+
+    let min = {
+      lon: -74.0389277,
+      lat: 40.701123
+    }
+
+    let max = {
+       lon: -73.9224757,
+       lat: 40.815238
+    }
+
+    let rm = new rastermap.RasterMap(min, max, 1000)
+    console.log(rm)
+
+    let geoPos = {
+      lat: min.lat + 3/4 * (max.lat - min.lat),
+      lon: (min.lon + max.lon) / 2
+    }
+    console.log(geoPos)
+
+    let rasterPos = rm.geoPosToRasterPos(geoPos, false)
+    console.log(rasterPos)
+    let geoPosBis = rm.rasterPosToGeoPos(rasterPos)
+    console.log(geoPosBis)
+
+    let geoMiddle = {
+      lat: (min.lat + max.lat) / 2,
+      lon: (min.lon + max.lon) / 2
+    }
+
+    rm.setColorGeo([255, 255, 255], geoMiddle)
+
+    let rasterData = rm.getRasterData()
+
+    // canvas things
+    rasterCanvas.width = rm.getRasterWidth()
+    rasterCanvas.height = rm.getRasterHeight()
+    let ctx = rasterCanvas.getContext('2d')
+    let canvasImageData = ctx.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height)
+    let canvasImageDataArray = canvasImageData.data
+    for(let i=0; i<canvasImageDataArray.length; i++){
+      canvasImageDataArray[i] = rasterData[i]
+    }
+    ctx.putImageData(canvasImageData, 0, 0)
+
+  </script>
+
+</body>
+</html>

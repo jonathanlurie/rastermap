@@ -1,0 +1,121 @@
+<html>
+<head>
+  <title>Test</title>
+</head>
+<body>
+  <!-- importing the automatically build module -->
+  <script src="../dist/rastermap.js"></script>
+
+  <p>Open Javascript console.</p>
+  <canvas id="raster" width="0" height="0"></canvas>
+
+  <script>
+
+
+
+
+  // fetch('data/nyc_1000.csv')
+  fetch('data/nyc.csv')
+  .then(res => {
+    return res.text()
+  })
+  .then(res => {
+    let geoData = parseGeoCsv(res)
+    drawMap(geoData, 5000)
+  })
+
+
+  // parse just this specific form of csv
+  function parseGeoCsv(text){
+    let min = {lat: +Infinity, lon: +Infinity}
+    let max = {lat: -Infinity, lon: -Infinity}
+
+    let allGeoPos = text.split('\n')
+              .filter(row => {
+                let trimmed = row.trim()
+
+                return trimmed !== '' && row[0] !== '#'
+
+              })
+              .map(row => {
+                let elems = row.split(';')
+                let lat = parseFloat(elems[1])
+                let lon = parseFloat(elems[2])
+
+                min.lat = Math.min(min.lat, lat)
+                min.lon = Math.min(min.lon, lon)
+                max.lat = Math.max(max.lat, lat)
+                max.lon = Math.max(max.lon, lon)
+
+                return {
+                  lat: lat,
+                  lon: lon
+                }
+              })
+
+    return {
+      allGeoPos: allGeoPos,
+      min: min,
+      max: max
+    }
+  }
+
+
+  function drawMap(geoData, largestSide=1000){
+    let span = {
+      lat: geoData.max.lat - geoData.min.lat,
+      lon: geoData.max.lon - geoData.min.lon
+    }
+
+    // we expand the dataset of 1%
+    let min = {
+      lat: geoData.min.lat - 0.005 * span.lat,
+      lon: geoData.min.lon - 0.005 * span.lon,
+    }
+
+    let max = {
+      lat: geoData.max.lat + 0.005 * span.lat,
+      lon: geoData.max.lon + 0.005 * span.lon,
+    }
+
+
+    // init the raster data
+    let rm = new rastermap.RasterMap(min, max, largestSide)
+
+    // coloring all the points
+    let allPoints = geoData.allGeoPos
+    for(let i=0; i<allPoints.length; i++){
+      rm.setColorGeo([255, 255, 255], allPoints[i])
+    }
+
+    refreshCanvas(rm.getRasterData(), rm.getRasterWidth(), rm.getRasterHeight())
+  }
+
+
+
+
+
+
+
+
+
+
+
+    function refreshCanvas(rasterData, w, h){
+      let rasterCanvas = document.getElementById('raster')
+      // canvas things
+      rasterCanvas.width = w
+      rasterCanvas.height = h
+      let ctx = rasterCanvas.getContext('2d')
+      let canvasImageData = ctx.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height)
+      let canvasImageDataArray = canvasImageData.data
+      for(let i=0; i<canvasImageDataArray.length; i++){
+        canvasImageDataArray[i] = rasterData[i]
+      }
+      ctx.putImageData(canvasImageData, 0, 0)
+    }
+
+  </script>
+
+</body>
+</html>
